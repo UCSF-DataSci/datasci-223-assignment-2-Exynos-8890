@@ -53,8 +53,11 @@ def load_patient_data(filepath):
     """
     # BUG: No error handling for file not found
     with open(filepath, 'r') as file:
-        return json.load(file)
-
+        try: return json.load(file)
+        except FileNotFoundError as e:
+            print(f"File not found: {e}")
+            return []
+        
 def clean_patient_data(patients):
     """
     Clean patient data by:
@@ -73,25 +76,40 @@ def clean_patient_data(patients):
     
     for patient in patients:
         # BUG: Typo in key 'nage' instead of 'name'
-        patient['nage'] = patient['name'].title()
+        # FIX: Corrected key name to 'name'
+        patient['name'] = patient['name'].title()
         
-        # BUG: Wrong method name (fill_na vs fillna)
-        patient['age'] = patient['age'].fill_na(0)
+        # BUG: Wrong method - strings don't have fill_na/fillna methods
+        # FIX: Convert age to integer with error handling
+        try:
+            patient['age'] = int(patient['age'])
+        except (ValueError, TypeError):
+            patient['age'] = 0
         
-        # BUG: Wrong method name (drop_duplcates vs drop_duplicates)
-        patient = patient.drop_duplcates()
+        # BUG: Wrong method - dictionaries don't have drop_duplicates method
+        # FIX: We'll handle duplicates after collecting all valid patients
         
         # BUG: Wrong comparison operator (= vs ==)
-        if patient['age'] = 18:
-            # BUG: Logic error - keeps patients under 18 instead of filtering them out
+        if patient['age'] >= 18:
+            # Only add patients who are 18 or older
             cleaned_patients.append(patient)
     
     # BUG: Missing return statement for empty list
+    # FIX: Added return statement for empty list
     if not cleaned_patients:
-        return None
+        return []
     
-    return cleaned_patients
-
+    # Remove duplicates by converting each patient dictionary to a tuple of items, then back
+    unique_patients = []
+    seen = set()
+    for patient in cleaned_patients:
+        # Convert dict to a hashable type (tuple of items)
+        patient_tuple = tuple(sorted(patient.items()))
+        if patient_tuple not in seen:
+            seen.add(patient_tuple)
+            unique_patients.append(patient)
+    
+    return unique_patients
 def main():
     """Main function to run the script."""
     # Get the directory of the current script
@@ -101,7 +119,11 @@ def main():
     data_path = os.path.join(script_dir, 'data', 'raw', 'patients.json')
     
     # BUG: No error handling for load_patient_data failure
+    # Fix: Added error handling
     patients = load_patient_data(data_path)
+    if not patients:
+        print("No patient data found.")
+        return
     
     # Clean the patient data
     cleaned_patients = clean_patient_data(patients)
