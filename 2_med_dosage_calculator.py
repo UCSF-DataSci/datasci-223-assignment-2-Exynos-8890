@@ -128,6 +128,10 @@ def calculate_dosage(patient):
     # FIX: Use get to avoid KeyError
     # medication = patient['medication'] # This bug is diabolical
     medication = patient.get('medication', 'unknown')  # Default to 'unknown' if not found
+    # BUG: No check if 'med' key exists
+    # FIX: Use get to avoid KeyError
+    if medication == 'unknown':
+        medication = patient.get('med', 'unknown')  # Fallback to 'med' key if 'medication' is not found
     
     # Get the medication factor
     # BUG: Adding 's' to medication name, which doesn't match DOSAGE_FACTORS keys
